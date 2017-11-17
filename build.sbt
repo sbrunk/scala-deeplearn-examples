@@ -14,6 +14,21 @@ lazy val `scala-deeplearn-examples` =
       )
     )
 
+
+lazy val dl4j =
+  project
+    .in(file("dl4j"))
+    .enablePlugins(AutomateHeaderPlugin)
+    .settings(settings)
+    .settings(
+      classpathTypes += "maven-plugin",
+      libraryDependencies ++= Seq(
+        library.dl4j,
+        library.logbackClassic,
+        library.nd4jNativePlatform,
+      )
+    )
+
 // *****************************************************************************
 // Library dependencies
 // *****************************************************************************
@@ -21,9 +36,14 @@ lazy val `scala-deeplearn-examples` =
 lazy val library =
   new {
     object Version {
+      val dl4j = "0.9.1"
+      val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
     }
+    val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
+    val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
   }
