@@ -21,11 +21,12 @@ lazy val dl4j =
     .enablePlugins(AutomateHeaderPlugin)
     .settings(settings)
     .settings(
-      classpathTypes += "maven-plugin",
+      scalaVersion := "2.11.12", // ScalNet and ND4S is only available for Scala 2.11
       libraryDependencies ++= Seq(
         library.dl4j,
         library.logbackClassic,
         library.nd4jNativePlatform,
+        library.scalNet
       )
     )
 
@@ -46,6 +47,7 @@ lazy val library =
     val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
+    val scalNet = "org.deeplearning4j" %% "scalnet" % Version.dl4j
   }
 
 // *****************************************************************************
@@ -72,7 +74,10 @@ lazy val commonSettings =
     ),
     unmanagedSourceDirectories.in(Compile) := Seq(scalaSource.in(Compile).value),
     unmanagedSourceDirectories.in(Test) := Seq(scalaSource.in(Test).value),
-    wartremoverWarnings in (Compile, compile) ++= Warts.unsafe
+    wartremoverWarnings in (Compile, compile) ++= Warts.unsafe,
+    resolvers ++= Seq(
+      Resolver.sonatypeRepo("snapshots")
+    )
 )
 
 lazy val scalafmtSettings =
