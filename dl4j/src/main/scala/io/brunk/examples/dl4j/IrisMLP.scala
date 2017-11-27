@@ -42,7 +42,7 @@ object IrisMLP {
 
     val seed         = 1
     val numInputs    = 4
-    val numHidden    = 4
+    val numHidden    = 10
     val numOutputs   = 3
     val learningRate = 0.1
     val iterations   = 1000

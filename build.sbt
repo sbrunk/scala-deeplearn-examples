@@ -30,6 +30,17 @@ lazy val dl4j =
       )
     )
 
+lazy val tensorflow =
+  project
+    .in(file("tensorflow"))
+    .enablePlugins(AutomateHeaderPlugin)
+    .settings(settings)
+    .settings(
+      libraryDependencies ++= Seq(
+        library.tensorFlowScala
+      )
+    )
+
 // *****************************************************************************
 // Library dependencies
 // *****************************************************************************
@@ -41,6 +52,7 @@ lazy val library =
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
+      val tensorFlowScala = "0.1.0-SNAPSHOT"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
@@ -48,6 +60,7 @@ lazy val library =
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
     val scalNet = "org.deeplearning4j" %% "scalnet" % Version.dl4j
+    val tensorFlowScala = "org.platanios" %% "tensorflow" % Version.tensorFlowScala classifier "darwin-cpu-x86_64"
   }
 
 // *****************************************************************************
@@ -82,7 +95,7 @@ lazy val commonSettings =
 
 lazy val scalafmtSettings =
   Seq(
-    scalafmtOnCompile := true,
+    scalafmtOnCompile := false,
     scalafmtOnCompile.in(Sbt) := false,
     scalafmtVersion := "1.3.0"
   )
