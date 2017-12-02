@@ -16,9 +16,10 @@
 
 package io.brunk.examples
 
+import java.io.File
+
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader
 import org.datavec.api.split.FileSplit
-import org.datavec.api.util.ClassPathResource
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator
 import org.nd4j.linalg.dataset.SplitTestAndTrain
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
@@ -26,7 +27,7 @@ import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
 object IrisReader {
   val numLinesToSkip = 1
 
-  val batchSize  = 200
+  val batchSize  = 150
   val labelIndex = 4
   val numLabels  = 3
 
@@ -34,18 +35,18 @@ object IrisReader {
 
   def readData(): SplitTestAndTrain = {
     val recordReader = new CSVRecordReader(numLinesToSkip, ',')
-    recordReader.initialize(new FileSplit(new ClassPathResource("iris.csv").getFile))
+    recordReader.initialize(new FileSplit(new File("data/iris.csv")))
     val iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numLabels)
     val dataSet  = iterator.next() // read all data in a single batch
     dataSet.shuffle(seed)
-    val testAndTrain = dataSet.splitTestAndTrain(0.70)
+    val testAndTrain = dataSet.splitTestAndTrain(0.67)
     val train        = testAndTrain.getTrain
     val test         = testAndTrain.getTest
 
-    val normalizer = new NormalizerStandardize
-    normalizer.fit(train)
-    normalizer.transform(train) // normalize training data
-    normalizer.transform(test)  // normalize test data
+//    val normalizer = new NormalizerStandardize
+//    normalizer.fit(train)
+//    normalizer.transform(train) // normalize training data
+//    normalizer.transform(test)  // normalize test data
     testAndTrain
   }
 }
