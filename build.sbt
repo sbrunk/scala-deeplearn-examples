@@ -41,6 +41,20 @@ lazy val tensorflow =
       )
     )
 
+lazy val mxnet =
+  project
+    .in(file("mxnet"))
+    .enablePlugins(AutomateHeaderPlugin)
+    .settings(settings)
+    .settings(
+      scalaVersion := "2.11.12", // MXNet is only available for Scala 2.11
+      resolvers += Resolver.mavenLocal,
+      libraryDependencies ++= Seq(
+        library.logbackClassic,
+        library.mxnetFull
+      )
+    )
+
 // *****************************************************************************
 // Library dependencies
 // *****************************************************************************
@@ -52,10 +66,12 @@ lazy val library =
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
+      val mxnet = "1.0.0-SNAPSHOT"
       val tensorFlowScala = "0.1.0-SNAPSHOT"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
+    val mxnetFull = "ml.dmlc.mxnet" % "mxnet-full_2.11-osx-x86_64-cpu" % Version.mxnet
     val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest

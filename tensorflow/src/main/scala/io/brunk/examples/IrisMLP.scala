@@ -31,12 +31,14 @@ object IrisMLP {
 
   def main(args: Array[String]): Unit = {
 
-    val seed         = 1
+    val seed         = 1 // for reproducibility
     val numInputs    = 4
     val numHidden    = 10
     val numOutputs   = 3
     val learningRate = 0.1
     val iterations   = 1000
+    val trainSize    = 100
+    val testSize     = 50
 
 //    Read CSV using plain Scala
 //    val source = scala.io.Source.fromFile("iris.csv")
@@ -60,12 +62,12 @@ object IrisMLP {
         }
         .shuffle(150, Some(seed))
 
-    val trainDataset = dataset.take(105)
-    val testDataset = dataset.drop(45)
+    val trainDataset = dataset.take(trainSize)
+    val testDataset = dataset.drop(trainSize)
 
-    val trainData = trainDataset.repeat().batch(100)
-    val evalTrainData = trainDataset.batch(105)
-    val evalTestData = testDataset.batch(45)
+    val trainData = trainDataset.repeat().batch(trainSize)
+    val evalTrainData = trainDataset.batch(trainSize)
+    val evalTestData = testDataset.batch(testSize)
 
 
     val input = tf.learn.Input(FLOAT32, Shape(-1, trainDataset.outputShapes._1(0)))

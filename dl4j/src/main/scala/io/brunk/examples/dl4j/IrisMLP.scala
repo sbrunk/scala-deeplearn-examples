@@ -40,7 +40,7 @@ object IrisMLP {
 
   def main(args: Array[String]): Unit = {
 
-    val seed         = 1
+    val seed         = 1  // for reproducibility
     val numInputs    = 4
     val numHidden    = 10
     val numOutputs   = 3
