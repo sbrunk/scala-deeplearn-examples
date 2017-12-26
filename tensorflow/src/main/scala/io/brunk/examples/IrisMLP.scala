@@ -73,33 +73,32 @@ object IrisMLP {
     val input = tf.learn.Input(FLOAT32, Shape(-1, trainDataset.outputShapes._1(0)))
     val trainInput = tf.learn.Input(FLOAT32, Shape(-1))
     val layer =
-      tf.learn.Linear(numHidden, name = "Layer_0") >> tf.learn.ReLU() >>
-      tf.learn.Linear(numOutputs, name = "OutputLayer")
-    val trainingInputLayer = tf.learn.Cast(INT64)
-    val loss = tf.learn.SparseSoftmaxCrossEntropy() >> tf.learn.Mean() >> tf.learn.ScalarSummary("Loss")
+      tf.learn.Linear("Layer_0/Linear", numHidden) >> tf.learn.ReLU("Layer_0/ReLU") >>
+      tf.learn.Linear("OutputLayer/Linear", numOutputs)
+    val trainingInputLayer = tf.learn.Cast("TrainInput/Cast", INT64)
+    val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>
+      tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
     val optimizer = tf.train.GradientDescent(learningRate)
     val model = tf.learn.Model(input, layer, trainInput, trainingInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/iris-mlp")
     val accMetric = tf.metrics.MapMetric(
-      (v: (Output, (Output, Output))) => {
-        println(v); (v._1.argmax(1), v._2._2)
-      }, tf.metrics.Accuracy())
+      (v: (Output, Output)) => (v._1.argmax(1), v._2), tf.metrics.Accuracy())
     val estimator = tf.learn.InMemoryEstimator(
       model,
       tf.learn.Configuration(Some(summariesDir)),
       tf.learn.StopCriteria(maxSteps = Some(iterations)),
       Set(
-        tf.learn.LossLoggingHook(tf.learn.StepHookTrigger(100)),
-        tf.learn.EvaluationHook(
+        tf.learn.LossLogger(trigger = tf.learn.StepHookTrigger(100)),
+        tf.learn.Evaluator(
           log = true, data = () => evalTrainData, metrics = Seq(accMetric),
-          trigger = tf.learn.StepHookTrigger(100), name = "Train Evaluation"),
-        tf.learn.EvaluationHook(
+          trigger = tf.learn.StepHookTrigger(100), name = "TrainEvaluation"),
+        tf.learn.Evaluator(
           log = true, data = () => evalTestData, metrics = Seq(accMetric),
-          trigger = tf.learn.StepHookTrigger(100), name = "Test Evaluation"),
-        tf.learn.StepRateHook(log = false, summaryDir = summariesDir, trigger = tf.learn.StepHookTrigger(100)),
-        tf.learn.SummarySaverHook(summariesDir, tf.learn.StepHookTrigger(100)),
-        tf.learn.CheckpointSaverHook(summariesDir, tf.learn.StepHookTrigger(100))),
+          trigger = tf.learn.StepHookTrigger(100), name = "TestEvaluation"),
+        tf.learn.StepRateLogger(log = false, summaryDir = summariesDir, trigger = tf.learn.StepHookTrigger(100)),
+        tf.learn.SummarySaver(summariesDir, tf.learn.StepHookTrigger(100)),
+        tf.learn.CheckpointSaver(summariesDir, tf.learn.StepHookTrigger(100))),
       tensorBoardConfig = tf.learn.TensorBoardConfig(summariesDir, reloadInterval = 1))
 
     estimator.train(() => trainData)
