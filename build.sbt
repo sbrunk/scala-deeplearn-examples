@@ -37,7 +37,8 @@ lazy val tensorflow =
     .settings(settings)
     .settings(
       libraryDependencies ++= Seq(
-        library.tensorFlowScala
+        library.tensorFlow,
+        library.tensorFlowData
       )
     )
 
@@ -67,7 +68,7 @@ lazy val library =
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
       val mxnet = "1.0.0-SNAPSHOT"
-      val tensorFlowScala = "0.1.0-SNAPSHOT"
+      val tensorFlow = "0.1.0-SNAPSHOT"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
@@ -76,7 +77,8 @@ lazy val library =
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
     val scalNet = "org.deeplearning4j" %% "scalnet" % Version.dl4j
-    val tensorFlowScala = "org.platanios" %% "tensorflow" % Version.tensorFlowScala classifier "darwin-cpu-x86_64"
+    val tensorFlow = "org.platanios" %% "tensorflow" % Version.tensorFlow classifier "darwin-cpu-x86_64"
+    val tensorFlowData = "org.platanios" %% "tensorflow-data" % Version.tensorFlow
   }
 
 // *****************************************************************************

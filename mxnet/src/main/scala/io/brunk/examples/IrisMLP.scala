@@ -20,7 +20,7 @@ import ml.dmlc.mxnet._
 import ml.dmlc.mxnet.io.NDArrayIter
 import ml.dmlc.mxnet.optimizer.SGD
 
-object IrisMPL {
+object IrisMLP {
 
   def main(args: Array[String]): Unit = {
 
