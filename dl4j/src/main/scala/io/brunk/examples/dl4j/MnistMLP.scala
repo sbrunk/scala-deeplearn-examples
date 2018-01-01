@@ -19,15 +19,17 @@ package io.brunk.examples.dl4j
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
 import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration
+import org.deeplearning4j.nn.conf.{NeuralNetConfiguration, Updater}
 import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.LoggerFactory
-import scala.collection.JavaConverters.asScalaIteratorConverter
 
+import scala.collection.JavaConverters.asScalaIteratorConverter
 
 /** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset.
   *
@@ -43,7 +45,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 128
+    val numHidden    = 512
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128
@@ -57,7 +59,8 @@ object MnistMLP {
     val conf = new NeuralNetConfiguration.Builder()
       .seed(seed)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-      .iterations(1)
+      .updater(Updater.ADAM)
+      .weightInit(WeightInit.XAVIER)
       .learningRate(learningRate)
       .list // builder for creating stacked layers
       .layer(0, new DenseLayer.Builder() // define the hidden layer
@@ -65,7 +68,7 @@ object MnistMLP {
         .nOut(numHidden)
         .activation(Activation.RELU)
         .build())
-      .layer(1, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD) // define the output layer
+      .layer(1, new OutputLayer.Builder(LossFunction.MCXENT) // define loss and output layer
         .nIn(numHidden)
         .nOut(numOutputs)
         .activation(Activation.SOFTMAX)
@@ -82,11 +85,17 @@ object MnistMLP {
     }
 
     // evaluate model performance
-    val evaluator = new Evaluation(numOutputs)
-    for (dataSet <- mnistTest.asScala) {
-      val output = model.output(dataSet.getFeatureMatrix)
-      evaluator.eval(dataSet.getLabels, output)
+    def accuracy(dataSet: DataSetIterator): Double = {
+      val evaluator = new Evaluation(numOutputs)
+      dataSet.reset()
+      for (dataSet <- dataSet.asScala) {
+        val output = model.output(dataSet.getFeatureMatrix)
+        evaluator.eval(dataSet.getLabels, output)
+      }
+      evaluator.accuracy()
     }
-    log.info(evaluator.stats)
+
+    log.info(s"Train accuracy = ${accuracy(mnistTrain)}")
+    log.info(s"Test accuracy = ${accuracy(mnistTest)}")
   }
 }

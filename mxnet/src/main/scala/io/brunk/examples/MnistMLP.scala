@@ -17,13 +17,12 @@
 package io.brunk.examples
 
 import ml.dmlc.mxnet._
-import ml.dmlc.mxnet.io.NDArrayIter
-import ml.dmlc.mxnet.optimizer.SGD
+import ml.dmlc.mxnet.optimizer.Adam
 
 /** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset.
   *
-  * Implemented using MXNet
-  *
+  * Implemented using MXNet.
+  * Based on https://mxnet.incubator.apache.org/tutorials/scala/mnist.html
   *
   * @author Sören Brunk
   */
@@ -33,7 +32,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 128
+    val numHidden    = 512
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01f
     val batchSize    = 128
@@ -58,7 +57,8 @@ object MnistMLP {
       "label_name" -> "sm_label",
       "batch_size" -> batchSize.toString,
       "shuffle" -> "1",
-      "flat" -> "0", "silent" -> "0"))
+      "flat" -> "0",
+      "silent" -> "0"))
 
     // define the neural network architecture
     val data = Symbol.Variable("data")
@@ -70,43 +70,34 @@ object MnistMLP {
     // create and train the model
     val model = FeedForward.newBuilder(mlp)
       .setContext(Context.cpu()) // change to gpu if available
-      .setNumEpoch(numEpochs)
-      .setOptimizer(new SGD(learningRate = learningRate))
       .setTrainData(trainDataIter)
       .setEvalData(testDataIter)
+      .setNumEpoch(numEpochs)
+      .setOptimizer(new Adam(learningRate = learningRate))
+      .setInitializer(new Xavier())
       .build()
 
     // evaluate model performance
-    val probArrays = model.predict(testDataIter)
-    // in this case, we do not have multiple outputs
-    require(probArrays.length == 1)
-    val prob = probArrays(0)
+    def accuracy(dataset: DataIter): Float = {
+      dataset.reset()
+      val predictions = model.predict(dataset).head
+      // get predicted labels
+      val predictedY = NDArray.argmax_channel(predictions)
 
-    // get real labels
-    import scala.collection.mutable.ListBuffer
-    testDataIter.reset()
-    val labels = ListBuffer.empty[NDArray]
-    while (testDataIter.hasNext) {
-      val evalData = testDataIter.next()
-      labels += evalData.label(0).copy()
-    }
-    val y = NDArray.concatenate(labels)
+      // get real labels
+      dataset.reset()
+      val labels = dataset.map(_.label(0).copy()).toVector
+      val y = NDArray.concatenate(labels)
+      require(y.shape == predictedY.shape)
 
-    // get predicted labels
-    val predictedY = NDArray.argmax_channel(prob)
-    require(y.shape == predictedY.shape)
-
-    // calculate accuracy
-    var numCorrect = 0
-    var numTotal = 0
-    for ((labelElem, predElem) <- y.toArray zip predictedY.toArray) {
-      if (labelElem == predElem) {
-        numCorrect += 1
+      // calculate accuracy
+      val numCorrect = (y.toArray zip predictedY.toArray).count {
+        case (labelElem, predElem) => labelElem == predElem
       }
-      numTotal += 1
+      numCorrect.toFloat / y.size
     }
-    val acc = numCorrect.toFloat / numTotal
-    println(s"Test accuracy = $acc")
-  }
 
+    println(s"Train accuracy = ${accuracy(trainDataIter)}")
+    println(s"Test accuracy = ${accuracy(testDataIter)}")
+  }
 }

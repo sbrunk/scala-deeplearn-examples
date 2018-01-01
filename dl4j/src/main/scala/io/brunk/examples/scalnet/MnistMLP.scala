@@ -23,15 +23,13 @@ import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.deeplearning4j.scalnet.layers.Dense
 import org.deeplearning4j.scalnet.models.Sequential
 import org.deeplearning4j.scalnet.optimizers.SGD
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.dataset.api.DataSet
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
 
-/** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset
+/** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset.
   *
   * Implemented using ScalNet.
   *
@@ -44,7 +42,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 128
+    val numHidden    = 512
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128
@@ -58,18 +56,24 @@ object MnistMLP {
     val model: Sequential = Sequential(rngSeed = seed)
     model.add(Dense(nOut = numHidden, nIn = numInputs, weightInit = WeightInit.XAVIER,  activation = "relu"))
     model.add(Dense(nOut = numOutputs, weightInit = WeightInit.XAVIER, activation = "softmax"))
-    model.compile(lossFunction = LossFunction.NEGATIVELOGLIKELIHOOD, optimizer = SGD(learningRate, momentum = 0,
+    model.compile(lossFunction = LossFunction.MCXENT, optimizer = SGD(learningRate, momentum = 0,
       nesterov = true))
 
     // train the model
     model.fit(mnistTrain, nbEpoch = numEpochs, List(new ScoreIterationListener(100)))
 
     // evaluate model performance
-    val evaluator = new Evaluation(numOutputs)
-    for (dataSet <- mnistTest.asScala) {
-      val output = model.predict(dataSet)
-      evaluator.eval(dataSet.getLabels, output)
+    def accuracy(dataSet: DataSetIterator): Double = {
+      val evaluator = new Evaluation(numOutputs)
+      dataSet.reset()
+      for (dataSet <- dataSet.asScala) {
+        val output = model.predict(dataSet)
+        evaluator.eval(dataSet.getLabels, output)
+      }
+      evaluator.accuracy()
     }
-    log.info(evaluator.stats())
+
+    log.info(s"Train accuracy = ${accuracy(mnistTrain)}")
+    log.info(s"Test accuracy = ${accuracy(mnistTest)}")
   }
 }

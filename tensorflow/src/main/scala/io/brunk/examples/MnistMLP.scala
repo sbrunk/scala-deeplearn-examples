@@ -26,7 +26,8 @@ import org.platanios.tensorflow.api.ops.variables.GlorotUniformInitializer
 
 /** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset
   *
-  * Implemented using TensorFlow for Scala.
+  * Implemented using TensorFlow for Scala based on the example from
+  * https://github.com/eaplatanios/tensorflow_scala/blob/0b7ca14de53935a34deac29802d085729228c4fe/examples/src/main/scala/org/platanios/tensorflow/examples/MNIST.scala
   *
   * @author Sören Brunk
   */
@@ -37,7 +38,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 128
+    val numHidden    = 512
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128
@@ -68,7 +69,7 @@ object MnistMLP {
     val trainingInputLayer = tf.learn.Cast("TrainInput/Cast", INT64)
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
-    val optimizer = tf.train.GradientDescent(learningRate)
+    val optimizer = tf.train.Adam(learningRate)
     val model = tf.learn.Model(input, layer, trainInput, trainingInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/mnist-mlp")
