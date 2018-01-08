@@ -45,7 +45,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 512
+    val numHidden    = 512     // size (number of neurons) of our hidden layer
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128
@@ -59,7 +59,7 @@ object MnistMLP {
     val conf = new NeuralNetConfiguration.Builder()
       .seed(seed)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-      .updater(Updater.ADAM)
+      .updater(Updater.SGD)
       .weightInit(WeightInit.XAVIER)
       .learningRate(learningRate)
       .list // builder for creating stacked layers

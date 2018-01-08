@@ -17,7 +17,7 @@
 package io.brunk.examples
 
 import ml.dmlc.mxnet._
-import ml.dmlc.mxnet.optimizer.Adam
+import ml.dmlc.mxnet.optimizer.SGD
 
 /** Simple multilayer perceptron for classifying handwritten digits from the MNIST dataset.
   *
@@ -30,9 +30,7 @@ object MnistMLP {
 
   def main(args: Array[String]): Unit = {
 
-    val seed         = 1       // for reproducibility
-    val numInputs    = 28 * 28
-    val numHidden    = 512
+    val numHidden    = 512     // size (number of neurons) of our hidden layer
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01f
     val batchSize    = 128
@@ -47,8 +45,7 @@ object MnistMLP {
       "batch_size" -> batchSize.toString,
       "shuffle" -> "1",
       "flat" -> "0",
-      "silent" -> "0",
-      "seed" -> "10"))
+      "silent" -> "0"))
 
     val testDataIter = IO.MNISTIter(Map(
       "image" -> "mnist/t10k-images-idx3-ubyte",
@@ -73,7 +70,7 @@ object MnistMLP {
       .setTrainData(trainDataIter)
       .setEvalData(testDataIter)
       .setNumEpoch(numEpochs)
-      .setOptimizer(new Adam(learningRate = learningRate))
+      .setOptimizer(new SGD(learningRate = learningRate))
       .setInitializer(new Xavier())
       .build()
 

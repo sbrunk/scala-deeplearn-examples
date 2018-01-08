@@ -42,7 +42,7 @@ object MnistMLP {
 
     val seed         = 1       // for reproducibility
     val numInputs    = 28 * 28
-    val numHidden    = 512
+    val numHidden    = 512     // size (number of neurons) in our hidden layer
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128

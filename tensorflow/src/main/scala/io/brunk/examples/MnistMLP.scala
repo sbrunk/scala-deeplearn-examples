@@ -36,9 +36,7 @@ object MnistMLP {
 
   def main(args: Array[String]): Unit = {
 
-    val seed         = 1       // for reproducibility
-    val numInputs    = 28 * 28
-    val numHidden    = 512
+    val numHidden    = 512     // size (number of neurons) of our hidden layer
     val numOutputs   = 10      // digits from 0 to 9
     val learningRate = 0.01
     val batchSize    = 128
@@ -60,16 +58,17 @@ object MnistMLP {
     val evalTestData = testImages.zip(testLabels).batch(1000).prefetch(10)
 
     // define the neural network architecture
-    val input = tf.learn.Input(UINT8, Shape(-1, dataSet.trainImages.shape(1), dataSet.trainImages.shape(2)))
-    val trainInput = tf.learn.Input(UINT8, Shape(-1))
-    val layer = tf.learn.Flatten("Input/Flatten") >>
-        tf.learn.Cast("Input/Cast", FLOAT32) >>
-        tf.learn.Linear("Layer_1/Linear", numHidden, weightsInitializer = GlorotUniformInitializer()) >> tf.learn.ReLU("Layer_1/ReLU", 0.01f) >>
-        tf.learn.Linear("OutputLayer/Linear", numOutputs, weightsInitializer = GlorotUniformInitializer())
-    val trainingInputLayer = tf.learn.Cast("TrainInput/Cast", INT64)
+    val input = tf.learn.Input(UINT8, Shape(-1, dataSet.trainImages.shape(1), dataSet.trainImages.shape(2))) // type and shape of images
+    val trainInput = tf.learn.Input(UINT8, Shape(-1)) // type and shape of labels
+    val layer = tf.learn.Flatten("Input/Flatten") >>  // flatten the images into a single vector
+      tf.learn.Cast("Input/Cast", FLOAT32) >>
+      tf.learn.Linear("Layer_1/Linear", numHidden, weightsInitializer = GlorotUniformInitializer()) >> // hidden layer
+      tf.learn.ReLU("Layer_1/ReLU") >> // hidden layer activation
+      tf.learn.Linear("OutputLayer/Linear", numOutputs, weightsInitializer = GlorotUniformInitializer()) // output layer
+    val trainingInputLayer = tf.learn.Cast("TrainInput/Cast", INT64) // cast labels to long
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
-    val optimizer = tf.train.Adam(learningRate)
+    val optimizer = tf.train.GradientDescent(learningRate)
     val model = tf.learn.Model(input, layer, trainInput, trainingInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/mnist-mlp")
