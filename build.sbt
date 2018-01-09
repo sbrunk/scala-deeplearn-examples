@@ -2,18 +2,9 @@
 // Projects
 // *****************************************************************************
 
-lazy val `scala-deeplearn-examples` =
-  project
-    .in(file("."))
-    .enablePlugins(AutomateHeaderPlugin)
-    .settings(settings)
-    .settings(
-      libraryDependencies ++= Seq(
-        library.scalaCheck % Test,
-        library.scalaTest  % Test
-      )
-    )
-
+// The MXNet example has been moved into its own sbt project for now because we have to build mxnet manually,
+// and we don't want to break dependency resolution for the other projects.
+// lazy val mxnet = project
 
 lazy val dl4j =
   project
@@ -21,7 +12,7 @@ lazy val dl4j =
     .enablePlugins(AutomateHeaderPlugin)
     .settings(settings)
     .settings(
-      scalaVersion := "2.11.12", // ScalNet and ND4S is only available for Scala 2.11
+      scalaVersion := "2.11.12", // ScalNet and ND4S are only available for Scala 2.11
       libraryDependencies ++= Seq(
         library.dl4j,
         library.logbackClassic,
@@ -30,7 +21,7 @@ lazy val dl4j =
       )
     )
 
-lazy val tensorflow =
+lazy val tensorFlow =
   project
     .in(file("tensorflow"))
     .enablePlugins(AutomateHeaderPlugin)
@@ -39,20 +30,6 @@ lazy val tensorflow =
       libraryDependencies ++= Seq(
         library.tensorFlow,
         library.tensorFlowData
-      )
-    )
-
-lazy val mxnet =
-  project
-    .in(file("mxnet"))
-    .enablePlugins(AutomateHeaderPlugin)
-    .settings(settings)
-    .settings(
-      scalaVersion := "2.11.12", // MXNet is only available for Scala 2.11
-      resolvers += Resolver.mavenLocal,
-      libraryDependencies ++= Seq(
-        library.logbackClassic,
-        library.mxnetFull
       )
     )
 
@@ -67,12 +44,10 @@ lazy val library =
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
-      val mxnet = "1.0.0-SNAPSHOT"
       val tensorFlow = "0.1.0-SNAPSHOT"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
-    val mxnetFull = "ml.dmlc.mxnet" % "mxnet-full_2.11-osx-x86_64-cpu" % Version.mxnet
     val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
@@ -86,10 +61,6 @@ lazy val library =
 // *****************************************************************************
 
 lazy val settings =
-  commonSettings ++
-  scalafmtSettings
-
-lazy val commonSettings =
   Seq(
     scalaVersion := "2.12.4",
     organization := "io.brunk",
@@ -105,15 +76,7 @@ lazy val commonSettings =
     ),
     unmanagedSourceDirectories.in(Compile) := Seq(scalaSource.in(Compile).value),
     unmanagedSourceDirectories.in(Test) := Seq(scalaSource.in(Test).value),
-    wartremoverWarnings in (Compile, compile) ++= Warts.unsafe,
     resolvers ++= Seq(
       Resolver.sonatypeRepo("snapshots")
     )
 )
-
-lazy val scalafmtSettings =
-  Seq(
-    scalafmtOnCompile := false,
-    scalafmtOnCompile.in(Sbt) := false,
-    scalafmtVersion := "1.3.0"
-  )

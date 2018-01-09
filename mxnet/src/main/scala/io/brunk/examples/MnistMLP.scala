@@ -71,7 +71,7 @@ object MnistMLP {
       .setEvalData(testDataIter)
       .setNumEpoch(numEpochs)
       .setOptimizer(new SGD(learningRate = learningRate))
-      .setInitializer(new Xavier())
+      .setInitializer(new Xavier()) // random weight initialization
       .build()
 
     // evaluate model performance

@@ -60,15 +60,19 @@ object MnistMLP {
     // define the neural network architecture
     val input = tf.learn.Input(UINT8, Shape(-1, dataSet.trainImages.shape(1), dataSet.trainImages.shape(2))) // type and shape of images
     val trainInput = tf.learn.Input(UINT8, Shape(-1)) // type and shape of labels
+
     val layer = tf.learn.Flatten("Input/Flatten") >>  // flatten the images into a single vector
       tf.learn.Cast("Input/Cast", FLOAT32) >>
       tf.learn.Linear("Layer_1/Linear", numHidden, weightsInitializer = GlorotUniformInitializer()) >> // hidden layer
       tf.learn.ReLU("Layer_1/ReLU") >> // hidden layer activation
       tf.learn.Linear("OutputLayer/Linear", numOutputs, weightsInitializer = GlorotUniformInitializer()) // output layer
+
     val trainingInputLayer = tf.learn.Cast("TrainInput/Cast", INT64) // cast labels to long
+
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
     val optimizer = tf.train.GradientDescent(learningRate)
+
     val model = tf.learn.Model(input, layer, trainInput, trainingInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/mnist-mlp")

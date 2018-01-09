@@ -60,7 +60,7 @@ object MnistMLP {
       .seed(seed)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
       .updater(Updater.SGD)
-      .weightInit(WeightInit.XAVIER)
+      .weightInit(WeightInit.XAVIER) // random initialization of our weights
       .learningRate(learningRate)
       .list // builder for creating stacked layers
       .layer(0, new DenseLayer.Builder() // define the hidden layer
