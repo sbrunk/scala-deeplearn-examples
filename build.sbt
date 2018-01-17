@@ -27,6 +27,9 @@ lazy val tensorFlow =
     .enablePlugins(AutomateHeaderPlugin)
     .settings(settings)
     .settings(
+      PB.targets in Compile := Seq(
+        scalapb.gen() -> (sourceManaged in Compile).value
+      ),
       libraryDependencies ++= Seq(
         library.tensorFlow,
         library.tensorFlowData
