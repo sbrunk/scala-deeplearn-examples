@@ -27,6 +27,7 @@ lazy val library =
       val mxnet = "1.0.0-SNAPSHOT"
     }
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
+    // change to "mxnet-full_2.10-linux-x86_64-cpu" or "mxnet-full_2.10-linux-x86_64-gpu" depending on your os/gpu
     val mxnetFull = "ml.dmlc.mxnet" % "mxnet-full_2.11-osx-x86_64-cpu" % Version.mxnet
   }
 

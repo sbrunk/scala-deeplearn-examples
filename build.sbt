@@ -52,6 +52,7 @@ lazy val library =
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
     val scalNet = "org.deeplearning4j" %% "scalnet" % Version.dl4j
+    // change the classifier to "linux-cpu-x86_64" or "linux-gpu-x86_64" if you're on a linux/linux with nvidia system
     val tensorFlow = "org.platanios" %% "tensorflow" % Version.tensorFlow classifier "darwin-cpu-x86_64"
     val tensorFlowData = "org.platanios" %% "tensorflow-data" % Version.tensorFlow
   }

@@ -81,7 +81,7 @@ object MnistMLP {
     val estimator = tf.learn.InMemoryEstimator(
       model,
       tf.learn.Configuration(Some(summariesDir)),
-      tf.learn.StopCriteria(maxSteps = Some((60000/batchSize)*numEpochs)),
+      tf.learn.StopCriteria(maxSteps = Some((60000/batchSize)*numEpochs)), // due to a bug, we can't use epochs directly
       Set(
         tf.learn.LossLogger(trigger = tf.learn.StepHookTrigger(100)),
         tf.learn.Evaluator(
