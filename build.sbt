@@ -33,7 +33,8 @@ lazy val tensorFlow =
       libraryDependencies ++= Seq(
         library.tensorFlow,
         library.tensorFlowData
-      )
+      ),
+      fork := true
     )
 
 // *****************************************************************************

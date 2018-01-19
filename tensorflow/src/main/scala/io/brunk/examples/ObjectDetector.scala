@@ -60,8 +60,15 @@ object ObjectDetector {
     }
 
     if (args.length < 2) printUsageAndExit()
-    val inputType = args(0)
-    val modelDir = if (args.length >= 3) args(2) else "ssd_inception_v2_coco_2017_11_17"
+
+    val modelDir = args.lift(2).getOrElse("ssd_inception_v2_coco_2017_11_17")
+    // load a pretrained detection model as TensorFlow graph
+    val graphDef = GraphDef.parseFrom(
+      new BufferedInputStream(new FileInputStream(new File(new File("models", modelDir), "frozen_inference_graph.pb"))))
+    val graph = Graph.fromGraphDef(graphDef)
+
+    // create a session and add our pretrained graph to it
+    val session = Session(graph)
 
     // load the protobuf label map containing the class number to string label mapping (from COCO)
     val labelMap: Map[Int, String] = {
@@ -72,14 +79,7 @@ object ObjectDetector {
       }.toMap
     }
 
-    // load a pretrained detection model as TensorFlow graph
-    val graphDef = GraphDef.parseFrom(
-      new BufferedInputStream(new FileInputStream(new File(new File("models", modelDir), "frozen_inference_graph.pb"))))
-    val graph = Graph.fromGraphDef(graphDef)
-
-    // create a session and add our pretrained graph to it
-    val session = Session(graph)
-
+    val inputType = args(0)
     inputType match {
       case "image" =>
         val image = imread(args(1))
@@ -95,12 +95,21 @@ object ObjectDetector {
     }
   }
 
+  // convert OpenCV tensor to TensorFlow tensor
+  def matToTensor(image: Mat): Tensor = {
+    val imageRGB = new Mat
+    cvtColor(image, imageRGB, COLOR_BGR2RGB) // convert channels from OpenCV GBR to RGB
+    val imgBuffer = imageRGB.createBuffer[ByteBuffer]
+    val shape = Shape(1, image.size.height, image.size.width(), image.channels)
+    Tensor.fromBuffer(UINT8, shape, imgBuffer.capacity, imgBuffer)
+  }
+
   // run detector on a single image
   def detectImage(image: Mat, graph: Graph, session: Session, labelMap: Map[Int, String]): Unit = {
     val canvasFrame = new CanvasFrame("Object Detection")
     canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) // exit when the canvas frame is closed
     canvasFrame.setCanvasSize(image.size.width, image.size.height)
-    val detectionOutput = detect(image, graph, session)
+    val detectionOutput = detect(matToTensor(image), graph, session)
     drawBoundingBoxes(image, labelMap, detectionOutput)
     canvasFrame.showImage(new OpenCVFrameConverter.ToMat().convert(image))
     canvasFrame.waitKey(0)
@@ -117,7 +126,7 @@ object ObjectDetector {
       val converter = new OpenCVFrameConverter.ToMat()
       val image = converter.convert(frame)
 
-      val detectionOutput = detect(image, graph, session)
+      val detectionOutput = detect(matToTensor(image), graph, session)
       drawBoundingBoxes(image, labelMap, detectionOutput)
 
       if (canvasFrame.isVisible) { // show our frame in the preview
@@ -129,15 +138,7 @@ object ObjectDetector {
   }
 
   // run the object detection model on an image
-  def detect(image: Mat, graph: Graph, session: Session): DetectionOutput = {
-
-    def matToTensor(image: Mat): Tensor = {
-      val imageRGB = new Mat
-      cvtColor(image, imageRGB, COLOR_BGR2RGB) // convert channels from OpenCV GBR to RGB
-      val imgBuffer = imageRGB.createBuffer[ByteBuffer]
-      val shape = Shape(1, image.size.height, image.size.width(), image.channels)
-      Tensor.fromBuffer(UINT8, shape, imgBuffer.capacity, imgBuffer)
-    }
+  def detect(image: Tensor, graph: Graph, session: Session): DetectionOutput = {
 
     // retrieve the output placeholders
     val imagePlaceholder = graph.getOutputByName("image_tensor:0")
@@ -147,7 +148,7 @@ object ObjectDetector {
     val numDetections = graph.getOutputByName("num_detections:0")
 
     // set image as input parameter
-    val feeds = Map(imagePlaceholder -> matToTensor(image))
+    val feeds = Map(imagePlaceholder -> image)
 
     // Run the detection model
     val Seq(boxes, scores, classes, num) =
