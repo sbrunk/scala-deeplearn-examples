@@ -30,11 +30,14 @@ lazy val tensorFlow =
       PB.targets in Compile := Seq(
         scalapb.gen() -> (sourceManaged in Compile).value
       ),
+      javaCppPresetLibs ++= Seq(
+        "ffmpeg" -> "3.2.1"
+      ),
       libraryDependencies ++= Seq(
         library.tensorFlow,
         library.tensorFlowData
       ),
-      fork := true
+      fork := true // prevent classloader issues caused by sbt and opencv
     )
 
 // *****************************************************************************

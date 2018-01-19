@@ -24,7 +24,7 @@ import object_detection.protos.string_int_label_map.{StringIntLabelMap, StringIn
 import org.bytedeco.javacpp.opencv_core.{FONT_HERSHEY_PLAIN, Mat, Point, Scalar}
 import org.bytedeco.javacpp.opencv_imgcodecs.imread
 import org.bytedeco.javacpp.opencv_imgproc.{COLOR_BGR2RGB, cvtColor, putText, rectangle}
-import org.bytedeco.javacv.{CanvasFrame, OpenCVFrameConverter, OpenCVFrameGrabber}
+import org.bytedeco.javacv.{CanvasFrame, FFmpegFrameGrabber, FrameGrabber, OpenCVFrameConverter, OpenCVFrameGrabber}
 import org.platanios.tensorflow.api.{Graph, Session, Shape, Tensor, UINT8}
 import org.tensorflow.framework.GraphDef
 
@@ -85,7 +85,7 @@ object ObjectDetector {
         val image = imread(args(1))
         detectImage(image, graph, session, labelMap)
       case "video" =>
-        val grabber = new OpenCVFrameGrabber(args(1))
+        val grabber = new FFmpegFrameGrabber(args(1))
         detectSequence(grabber, graph, session, labelMap)
       case "camera" =>
         val cameraDevice = Integer.parseInt(args(1))
@@ -117,20 +117,20 @@ object ObjectDetector {
   }
 
   // run detector on an image sequence
-  def detectSequence(grabber: OpenCVFrameGrabber, graph: Graph, session: Session, labelMap: Map[Int, String]): Unit = {
+  def detectSequence(grabber: FrameGrabber, graph: Graph, session: Session, labelMap: Map[Int, String]): Unit = {
     val canvasFrame = new CanvasFrame("Object Detection", CanvasFrame.getDefaultGamma / grabber.getGamma)
     canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) // exit when the canvas frame is closed
+    val converter = new OpenCVFrameConverter.ToMat()
     grabber.start()
     for (frame <- continually(grabber.grab()).takeWhile(_ != null
       && (grabber.getLengthInFrames == 0 || grabber.getFrameNumber < grabber.getLengthInFrames))) {
-      val converter = new OpenCVFrameConverter.ToMat()
       val image = converter.convert(frame)
-
-      val detectionOutput = detect(matToTensor(image), graph, session)
-      drawBoundingBoxes(image, labelMap, detectionOutput)
-
-      if (canvasFrame.isVisible) { // show our frame in the preview
-        canvasFrame.showImage(frame)
+      if (image != null) { // sometimes the first few frames are empty so we ignore them
+        val detectionOutput = detect(matToTensor(image), graph, session) // run our model
+        drawBoundingBoxes(image, labelMap, detectionOutput)
+        if (canvasFrame.isVisible) { // show our frame in the preview
+          canvasFrame.showImage(frame)
+        }
       }
     }
     canvasFrame.dispose()

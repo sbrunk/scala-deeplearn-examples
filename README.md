@@ -2,6 +2,10 @@
 
 Welcome to scala-deeplearn-examples!
 
+This repository contains a list of examples used in my blog series on deep learning with Scala https://brunk.io
+
+You can clone the repository and run the examples using SBT.
+
 ## Contribution policy ##
 
 Contributions via GitHub pull requests are gladly accepted from their original author. Along with
