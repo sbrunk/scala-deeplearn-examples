@@ -38,6 +38,7 @@ case class DetectionOutput(boxes: Tensor, scores: Tensor, classes: Tensor, num: 
   * https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md
   *
   * You have to download and extract the model you want to run first, like so:
+  * $ cd tensorflow
   * $ mkdir models && cd models
   * $ wget http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2017_11_17.tar.gz
   * $ tar xzf ssd_inception_v2_coco_2017_11_17.tar.gz
