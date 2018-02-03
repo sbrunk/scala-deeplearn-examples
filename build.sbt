@@ -31,7 +31,7 @@ lazy val tensorFlow =
         scalapb.gen() -> (sourceManaged in Compile).value
       ),
       javaCppPresetLibs ++= Seq(
-        "ffmpeg" -> "3.2.1"
+        "ffmpeg" -> "3.4.1"
       ),
       libraryDependencies ++= Seq(
         library.tensorFlow,
@@ -51,7 +51,7 @@ lazy val library =
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
-      val tensorFlow = "0.1.0-SNAPSHOT"
+      val tensorFlow = "0.1.1"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
