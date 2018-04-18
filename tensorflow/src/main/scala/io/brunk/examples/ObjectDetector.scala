@@ -21,8 +21,8 @@ import java.nio.ByteBuffer
 import javax.swing.JFrame
 
 import object_detection.protos.string_int_label_map.{StringIntLabelMap, StringIntLabelMapItem}
-import org.bytedeco.javacpp.opencv_core.{FONT_HERSHEY_PLAIN, Mat, Point, Scalar}
-import org.bytedeco.javacpp.opencv_imgcodecs.imread
+import org.bytedeco.javacpp.opencv_core.{FONT_HERSHEY_PLAIN, LINE_AA, Mat, Point, Scalar}
+import org.bytedeco.javacpp.opencv_imgcodecs._
 import org.bytedeco.javacpp.opencv_imgproc.{COLOR_BGR2RGB, cvtColor, putText, rectangle}
 import org.bytedeco.javacv.{CanvasFrame, FFmpegFrameGrabber, FrameGrabber, OpenCVFrameConverter, OpenCVFrameGrabber}
 import org.platanios.tensorflow.api.{Graph, Session, Shape, Tensor, UINT8}
@@ -174,18 +174,34 @@ object ObjectDetector {
         // draw score value
         putText(image,
           f"$label%s ($score%1.2f)", // text
-          new Point(xmin, ymin - 6), // text position
+          new Point(xmin + 6, ymin + 38), // text position
           FONT_HERSHEY_PLAIN, // font type
-          1.5, // font scale
-          new Scalar(0, 255, 0, 0), // text color
-          2, // text thickness
-          8, // line type
+          2.6, // font scale
+          new Scalar(0, 0, 0, 0), // text color
+          4, // text thickness
+          LINE_AA, // line type
+          false) // origin is at the top-left corner
+        putText(image,
+          f"$label%s ($score%1.2f)", // text
+          new Point(xmin + 4, ymin + 36), // text position
+          FONT_HERSHEY_PLAIN, // font type
+          2.6, // font scale
+          new Scalar(0, 230, 255, 0), // text color
+          4, // text thickness
+          LINE_AA, // line type
           false) // origin is at the top-left corner
         // draw bounding box
         rectangle(image,
+          new Point(xmin + 1, ymin + 1), // upper left corner
+          new Point(xmax + 1, ymax + 1), // lower right corner
+          new Scalar(0, 0, 0, 0), // color
+          2, // thickness
+          0, // lineType
+          0) // shift
+        rectangle(image,
           new Point(xmin, ymin), // upper left corner
           new Point(xmax, ymax), // lower right corner
-          new Scalar(0, 255, 0, 0), // color
+          new Scalar(0, 230, 255, 0), // color
           2, // thickness
           0, // lineType
           0) // shift
