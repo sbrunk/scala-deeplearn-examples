@@ -18,14 +18,17 @@ package io.brunk.examples.scalnet
 
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
 import org.deeplearning4j.eval.Evaluation
+import org.deeplearning4j.nn.conf.Updater
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
-import org.deeplearning4j.scalnet.layers.Dense
+import org.deeplearning4j.scalnet.layers.core.Dense
 import org.deeplearning4j.scalnet.models.Sequential
-import org.deeplearning4j.scalnet.optimizers.SGD
+import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
+import org.nd4j.linalg.learning.config.Sgd
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
 
@@ -54,10 +57,9 @@ object MnistMLP {
 
     // define the neural network architecture
     val model: Sequential = Sequential(rngSeed = seed)
-    model.add(Dense(nOut = numHidden, nIn = numInputs, weightInit = WeightInit.XAVIER,  activation = "relu"))
-    model.add(Dense(nOut = numOutputs, weightInit = WeightInit.XAVIER, activation = "softmax"))
-    model.compile(lossFunction = LossFunction.MCXENT, optimizer = SGD(learningRate, momentum = 0,
-      nesterov = true))
+    model.add(Dense(nOut = numHidden, nIn = numInputs, weightInit = WeightInit.XAVIER, activation = Activation.RELU))
+    model.add(Dense(nOut = numOutputs, weightInit = WeightInit.XAVIER, activation = Activation.RELU))
+    model.compile(lossFunction = LossFunction.MCXENT, updater = Updater.SGD) // TODO how do we set the learning rate?
 
     // train the model
     model.fit(mnistTrain, nbEpoch = numEpochs, List(new ScoreIterationListener(100)))

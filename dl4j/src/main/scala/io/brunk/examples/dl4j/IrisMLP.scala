@@ -45,16 +45,14 @@ object IrisMLP {
     val numHidden    = 10
     val numOutputs   = 3
     val learningRate = 0.1
-    val iterations   = 1000
+    val numEpoch   =   30
 
     val testAndTrain = IrisReader.readData()
 
     val conf = new NeuralNetConfiguration.Builder()
       .seed(seed)
-      .iterations(iterations)
       .activation(Activation.RELU)
       .weightInit(WeightInit.XAVIER)
-      .learningRate(learningRate)
       .list()
       .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(numHidden).build())
       .layer(1,
@@ -72,7 +70,9 @@ object IrisMLP {
     model.setListeners(new ScoreIterationListener(100)) // print out scores every 100 iterations
 
     log.info("Running training")
-    model.fit(testAndTrain.getTrain)
+    for(_ <- 0 until numEpoch)
+      model.fit(testAndTrain.getTrain)
+
     log.info("Training finished")
 
     log.info(s"Evaluating model on ${testAndTrain.getTest.getLabels.rows()} examples")

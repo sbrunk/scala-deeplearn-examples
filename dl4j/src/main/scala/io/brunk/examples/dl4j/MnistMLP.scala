@@ -19,13 +19,14 @@ package io.brunk.examples.dl4j
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator
 import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
-import org.deeplearning4j.nn.conf.{NeuralNetConfiguration, Updater}
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
+import org.nd4j.linalg.learning.config.Sgd
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import org.slf4j.LoggerFactory
 
@@ -59,9 +60,8 @@ object MnistMLP {
     val conf = new NeuralNetConfiguration.Builder()
       .seed(seed)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-      .updater(Updater.SGD)
+      .updater(new Sgd(learningRate))
       .weightInit(WeightInit.XAVIER) // random initialization of our weights
-      .learningRate(learningRate)
       .list // builder for creating stacked layers
       .layer(0, new DenseLayer.Builder() // define the hidden layer
         .nIn(numInputs)
@@ -80,9 +80,8 @@ object MnistMLP {
     model.setListeners(new ScoreIterationListener(100))   // print the score every 100th iteration
 
     // train the model
-    for (_ <- 0 until numEpochs) {
+    for (_ <- 0 until numEpochs)
       model.fit(mnistTrain)
-    }
 
     // evaluate model performance
     def accuracy(dataSet: DataSetIterator): Double = {

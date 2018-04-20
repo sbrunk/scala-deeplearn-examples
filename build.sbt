@@ -47,7 +47,7 @@ lazy val tensorFlow =
 lazy val library =
   new {
     object Version {
-      val dl4j = "0.9.1"
+      val dl4j = "1.0.0-alpha"
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
