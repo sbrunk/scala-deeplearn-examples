@@ -15,6 +15,7 @@ lazy val dl4j =
       scalaVersion := "2.11.12", // ScalNet and ND4S are only available for Scala 2.11
       libraryDependencies ++= Seq(
         library.dl4j,
+        library.dl4jUi,
         library.logbackClassic,
         library.nd4jNativePlatform,
         library.scalNet
@@ -54,6 +55,7 @@ lazy val library =
       val tensorFlow = "0.1.1"
     }
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
+    val dl4jUi = "org.deeplearning4j" %% "deeplearning4j-ui" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
     val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
