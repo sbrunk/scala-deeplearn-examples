@@ -15,6 +15,7 @@ lazy val dl4j =
       scalaVersion := "2.11.12", // ScalNet and ND4S are only available for Scala 2.11
       libraryDependencies ++= Seq(
         library.dl4j,
+        library.dl4jCuda,
         library.dl4jUi,
         library.logbackClassic,
         library.nd4jNativePlatform,
@@ -57,12 +58,13 @@ lazy val library =
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val dl4jUi = "org.deeplearning4j" %% "deeplearning4j-ui" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
-    val nd4jNativePlatform = "org.nd4j" % "nd4j-native-platform" % Version.dl4j
+    val nd4jNativePlatform = "org.nd4j" % "nd4j-cuda-9.0-platform" % Version.dl4j
+    val dl4jCuda = "org.deeplearning4j" % "deeplearning4j-cuda-9.0" % Version.dl4j
     val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
     val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
     val scalNet = "org.deeplearning4j" %% "scalnet" % Version.dl4j
     // change the classifier to "linux-cpu-x86_64" or "linux-gpu-x86_64" if you're on a linux/linux with nvidia system
-    val tensorFlow = "org.platanios" %% "tensorflow" % Version.tensorFlow classifier "darwin-cpu-x86_64"
+    val tensorFlow = "org.platanios" %% "tensorflow" % Version.tensorFlow classifier "linux-gpu-x86_64"
     val tensorFlowData = "org.platanios" %% "tensorflow-data" % Version.tensorFlow
   }
 
