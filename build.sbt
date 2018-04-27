@@ -36,6 +36,7 @@ lazy val tensorFlow =
         "ffmpeg" -> "3.4.1"
       ),
       libraryDependencies ++= Seq(
+        library.betterFiles,
         library.tensorFlow,
         library.tensorFlowData
       ),
@@ -49,12 +50,15 @@ lazy val tensorFlow =
 lazy val library =
   new {
     object Version {
+      val betterFiles = "3.4.0"
       val dl4j = "1.0.0-alpha"
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
-      val tensorFlow = "0.1.1"
+      val tensorFlow = "0.2.0-SNAPSHOT"
+
     }
+    val betterFiles = "com.github.pathikrit" %% "better-files" % Version.betterFiles
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val dl4jUi = "org.deeplearning4j" %% "deeplearning4j-ui" % Version.dl4j
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic

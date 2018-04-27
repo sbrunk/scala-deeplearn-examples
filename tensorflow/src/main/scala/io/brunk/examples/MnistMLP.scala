@@ -73,7 +73,7 @@ object MnistMLP {
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
     val optimizer = tf.train.GradientDescent(learningRate)
 
-    val model = tf.learn.Model(input, layer, trainInput, trainingInputLayer, loss, optimizer)
+    val model = tf.learn.Model.supervised(input, layer, trainInput, trainingInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/mnist-mlp")
     val accMetric = tf.metrics.MapMetric(
@@ -85,11 +85,8 @@ object MnistMLP {
       Set(
         tf.learn.LossLogger(trigger = tf.learn.StepHookTrigger(100)),
         tf.learn.Evaluator(
-          log = true, data = () => evalTrainData, metrics = Seq(accMetric),
-          trigger = tf.learn.StepHookTrigger(1000), name = "TrainEvaluation"),
-        tf.learn.Evaluator(
-          log = true, data = () => evalTestData, metrics = Seq(accMetric),
-          trigger = tf.learn.StepHookTrigger(1000), name = "TestEvaluation"),
+          log = true, datasets = Seq(("Train", () => evalTrainData), ("Test", () => evalTestData)),
+          metrics = Seq(accMetric), trigger = tf.learn.StepHookTrigger(1000), name = "Evaluator"),
         tf.learn.StepRateLogger(log = false, summaryDir = summariesDir, trigger = tf.learn.StepHookTrigger(100)),
         tf.learn.SummarySaver(summariesDir, tf.learn.StepHookTrigger(100)),
         tf.learn.CheckpointSaver(summariesDir, tf.learn.StepHookTrigger(1000))),
