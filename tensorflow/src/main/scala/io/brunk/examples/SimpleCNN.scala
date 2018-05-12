@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2017 Sören Brunk
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.brunk.examples
 
 import java.nio.file.Paths
@@ -50,62 +34,58 @@ import org.platanios.tensorflow.api.ops.variables.GlorotUniformInitializer
   * @author Sören Brunk
   */
 object SimpleCNN {
+
   private[this] val logger = Logger(LoggerFactory.getLogger(getClass))
 
   def main(args: Array[String]): Unit = {
 
     val seed = 42
-    val batchSize    = 512
+    val batchSize    = 256
     val numEpochs    = 10
 
     val dataDir = File(args(0))
-    val imgClasses = dataDir.list.filter(_.isDirectory).toVector.sortBy(_.name)
-    val labelForClass = imgClasses.zipWithIndex.toMap
-
-    val shuffledSamples =  {
-      // in case of different numbers of samples per class, get the smallest one
-      val numSamplesPerClass = imgClasses.map(_.glob("*.jpg").size).min
-      imgClasses.flatMap { imgClass =>
-        shuffle(imgClass.children.toVector)
-          .take(numSamplesPerClass)       // balance samples to have the same number for each class
-          .map(imgFile => (imgFile, labelForClass(imgClass)))
-      }
-    }
-
-    val numClasses = imgClasses.size
+    val trainDir = dataDir / "train"
+    val testDir = dataDir / "test"
+    val imgClassDirs = trainDir.list.filter(_.isDirectory).toVector.sortBy(_.name)
+    val numClasses = imgClassDirs.size
     logger.info("Number of classes {}", numClasses)
 
+    val numericLabelForClass = imgClassDirs.map(_.name).zipWithIndex.toMap
 
-    val numSamples = shuffledSamples.size
-    logger.info("Number of samples {}", numSamples)
-    val numTrainSamples = (0.8 * numSamples).toInt
-    val numTestSamples = (0.2 * numSamples).toInt
-
-    val (filenames, labels) = {
-      val (filenames, labels) = shuffledSamples.unzip
-      logger.info(Tensor(filenames.map(filename => filename.pathAsString)).squeeze(Seq(0)).summarize())
-      logger.info(Tensor(labels).squeeze(Seq(0)).summarize())
-      (Tensor(filenames.map(filename => filename.pathAsString)).squeeze(Seq(0)), Tensor(UINT8, labels).squeeze(Seq(0)))
+    def filenamesWithLabels(dir: File): (Tensor, Tensor) = {
+      val (filenames, labels) = (for {
+        dir <- dir.children.filter(_.isDirectory)
+        filename <- dir.glob("*.jpg").map(_.pathAsString)
+      } yield (filename, numericLabelForClass(dir.name))).toVector.unzip
+      (Tensor(filenames).squeeze(Seq(0)), Tensor(UINT8, labels).squeeze(Seq(0))
+      )
     }
 
-    val dataSet: Dataset[(Tensor, Tensor), (Output, Output), (DataType, DataType), (Shape, Shape)] =
-      tf.data.TensorSlicesDataset(filenames)
-        .zip(tf.data.TensorSlicesDataset(labels))
-        .shuffle(numSamples, Some(seed))
-        .map ({ case (filename, label) =>
-          val rawImage = tf.data.readFile(filename)
-          val image = tf.image.decodeJpeg(rawImage, numChannels = 3)
-          (image, label)
-          // TODO resize image
-        }, numParallelCalls = 10)
+    def readImage(filename: Output): Output = {
+      val rawImage = tf.data.readFile(filename)
+      val image = tf.image.decodeJpeg(rawImage, numChannels = 3)
+      tf.image.resizeBilinear(image.expandDims(axis = 0), Seq(100, 100)).squeeze(Seq(0)).cast(UINT8)
+    }
 
-    val trainData = dataSet
-      .take(numTrainSamples)
-      .repeat()
-      .batch(batchSize)
-      .prefetch(100)
-    val evalTrainData = dataSet.batch(200).prefetch(100)
-    val evalTestData = dataSet.drop(numTrainSamples).batch(200).prefetch(100)
+    val trainData: Dataset[(Tensor, Tensor), (Output, Output), (DataType, DataType), (Shape, Shape)] =
+      tf.data.TensorSlicesDataset(filenamesWithLabels(trainDir))
+        .shuffle(bufferSize = 10000, Some(seed))
+        .map({ case (filename, label) => (readImage(filename), label)}, numParallelCalls = 16)
+        .repeat()
+        .batch(batchSize)
+        .prefetch(100)
+
+    val evalTrainData: Dataset[(Tensor, Tensor), (Output, Output), (DataType, DataType), (Shape, Shape)] =
+      tf.data.TensorSlicesDataset(filenamesWithLabels(trainDir))
+        .map({ case (filename, label) => (readImage(filename), label)}, numParallelCalls = 16)
+        .batch(512)
+        .prefetch(100)
+
+    val evalTestData: Dataset[(Tensor, Tensor), (Output, Output), (DataType, DataType), (Shape, Shape)] =
+      tf.data.TensorSlicesDataset(filenamesWithLabels(testDir))
+        .map({ case (filename, label) => (readImage(filename), label)}, numParallelCalls = 16)
+        .batch(512)
+        .prefetch(100)
 
     // define the neural network architecture
     val input = tf.learn.Input(UINT8, Shape(-1, 100, 100, 3)) // type and shape of images
@@ -131,20 +111,21 @@ object SimpleCNN {
       tf.learn.MaxPool("Layer_3/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
       tf.learn.Dropout("Layer_3/Dropout", keepProbability = 0.5f) >>
       tf.learn.Flatten("Layer_3/Flatten") >>
-      tf.learn.Linear("Layer_4/Linear", units = 512) >> tf.learn.ReLU("Layer_4/ReLU", 0.1f) >>
+      tf.learn.Linear("Layer_4/Linear", units = 512) >>
+      tf.learn.ReLU("Layer_4/ReLU", 0.1f) >>
       tf.learn.Linear("OutputLayer/Linear", 2)
 
     val trainInputLayer = tf.learn.Cast("TrainInput/Cast", INT32) // cast labels to long
 
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>
       tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
-    val optimizer = tf.train.AdaGrad(0.001f)
+    val optimizer = tf.train.Adam(0.01f)
 
     val model = tf.learn.Model.supervised(input, layers, trainInput, trainInputLayer, loss, optimizer)
 
     val summariesDir = Paths.get("temp/simple-cnn")
     val accMetric = tf.metrics.MapMetric(
-      (v: (Output, Output)) => (v._1.argmax(-1), v._2), tf.metrics.Accuracy())
+      {case (predictions: Output, label: Output) => (predictions.argmax(-1), label)}, tf.metrics.Accuracy())
     val estimator = tf.learn.InMemoryEstimator(
       model,
       tf.learn.Configuration(Some(summariesDir)),
@@ -170,5 +151,6 @@ object SimpleCNN {
     // evaluate model performance
     //logger.info(s"Train accuracy = ${accuracy(dataSet.trainImages, dataSet.trainLabels)}")
     //logger.info(s"Test accuracy = ${accuracy(dataSet.testImages, dataSet.testLabels)}")
+
   }
 }
