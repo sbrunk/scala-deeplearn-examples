@@ -37,6 +37,8 @@ lazy val tensorFlow =
       ),
       libraryDependencies ++= Seq(
         library.betterFiles,
+        library.janino,
+        library.logbackClassic,
         library.tensorFlow,
         library.tensorFlowData
       ),
@@ -52,6 +54,7 @@ lazy val library =
     object Version {
       val betterFiles = "3.4.0"
       val dl4j = "1.0.0-alpha"
+      val janino = "2.6.1"
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
@@ -61,6 +64,7 @@ lazy val library =
     val betterFiles = "com.github.pathikrit" %% "better-files" % Version.betterFiles
     val dl4j = "org.deeplearning4j" % "deeplearning4j-core" % Version.dl4j
     val dl4jUi = "org.deeplearning4j" %% "deeplearning4j-ui" % Version.dl4j
+    val janino = "org.codehaus.janino" % "janino" % Version.janino
     val logbackClassic = "ch.qos.logback" % "logback-classic" % Version.logbackClassic
     val nd4jNativePlatform = "org.nd4j" % "nd4j-cuda-9.0-platform" % Version.dl4j
     val dl4jCuda = "org.deeplearning4j" % "deeplearning4j-cuda-9.0" % Version.dl4j
