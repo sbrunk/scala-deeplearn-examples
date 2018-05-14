@@ -36,7 +36,7 @@ object FashionMnistCNN {
 
   def main(args: Array[String]): Unit = {
 
-    val batchSize    = 256
+    val batchSize    = 2048
     val numEpochs    = 500
 
     // download and load the MNIST images as tensors
@@ -48,7 +48,7 @@ object FashionMnistCNN {
     val trainData =
       trainImages.zip(trainLabels)
           .repeat()
-          .shuffle(10000)
+          .shuffle(60000)
           .batch(batchSize)
           .prefetch(10)
     val evalTrainData = trainImages.zip(trainLabels).batch(1000).prefetch(10)
@@ -59,25 +59,25 @@ object FashionMnistCNN {
     val labelInput = tf.learn.Input(UINT8, Shape(-1))             // type and shape of our labels
 
     val layer = tf.learn.Cast("Input/Cast", FLOAT32) >>
-      tf.learn.Conv2D("Layer_0/Conv2D", Shape(3, 3, 1, 16), stride1 = 1, stride2 = 1, ValidConvPadding) >>
+      tf.learn.Conv2D("Layer_0/Conv2D", Shape(3, 3, 1, 32), stride1 = 1, stride2 = 1, ValidConvPadding) >>
       tf.learn.AddBias("Layer_0/Bias") >>
       tf.learn.ReLU("Layer_0/ReLU", 0.1f) >>
       tf.learn.MaxPool("Layer_1/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, ValidConvPadding) >>
-      tf.learn.Conv2D("Layer_1/Conv2D", Shape(5, 5, 16, 32), stride1 = 1, stride2 = 1, ValidConvPadding) >>
+      tf.learn.Conv2D("Layer_1/Conv2D", Shape(5, 5, 32, 64), stride1 = 2, stride2 = 2, ValidConvPadding) >>
       tf.learn.AddBias("Layer_1/Bias") >>
       tf.learn.ReLU("Layer_1/ReLU", 0.1f) >>
       tf.learn.MaxPool("Layer_1/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, ValidConvPadding) >>
       tf.learn.Flatten("Input/Flatten") >>
       tf.learn.Linear("Layer_2/Linear", units = 512) >>           // hidden layer
       tf.learn.ReLU("Layer_2/ReLU", 0.1f) >>                            // hidden layer activation
-      tf.learn.Dropout("Layer_2/Dropout", keepProbability = 0.5f) >> // dropout
+      tf.learn.Dropout("Layer_2/Dropout", keepProbability = 0.8f) >> // dropout
       tf.learn.Linear("OutputLayer/Linear", units = 10)           // output layer
 
     val trainInputLayer = tf.learn.Cast("TrainInput/Cast", INT64) // cast labels to long
 
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>   // loss/error function
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
-    val optimizer = tf.train.Adam(learningRate = 0.0005)          // the optimizer updates our weights
+    val optimizer = tf.train.Adam(learningRate = 0.001)          // the optimizer updates our weights
 
     val model = tf.learn.Model.supervised(input, layer, labelInput, trainInputLayer, loss, optimizer)
 

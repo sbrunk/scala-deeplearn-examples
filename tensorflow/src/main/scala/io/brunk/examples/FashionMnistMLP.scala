@@ -36,8 +36,8 @@ object FashionMnistMLP {
 
   def main(args: Array[String]): Unit = {
 
-    val batchSize    = 256
-    val numEpochs    = 60
+    val batchSize    = 2048
+    val numEpochs    = 500
 
     // download and load the MNIST images as tensors
     val dataSet = MNISTLoader.load(Paths.get("datasets/Fashion-MNIST"), FASHION_MNIST)
@@ -48,7 +48,7 @@ object FashionMnistMLP {
     val trainData =
       trainImages.zip(trainLabels)
           .repeat()
-          .shuffle(10000)
+          .shuffle(60000)
           .batch(batchSize)
           .prefetch(10)
     val evalTrainData = trainImages.zip(trainLabels).batch(1000).prefetch(10)
@@ -62,14 +62,13 @@ object FashionMnistMLP {
       tf.learn.Cast("Input/Cast", FLOAT32) >>                     // cast input to float
       tf.learn.Linear("Layer_1/Linear", units = 512) >>           // hidden layer
       tf.learn.ReLU("Layer_1/ReLU", 0.1f) >>                            // hidden layer activation
-      tf.learn.Dropout("Layer_2/Dropout", keepProbability = 0.5f) >> // dropout
       tf.learn.Linear("OutputLayer/Linear", units = 10)           // output layer
 
     val trainInputLayer = tf.learn.Cast("TrainInput/Cast", INT64) // cast labels to long
 
     val loss = tf.learn.SparseSoftmaxCrossEntropy("Loss/CrossEntropy") >>   // loss/error function
         tf.learn.Mean("Loss/Mean") >> tf.learn.ScalarSummary("Loss/Summary", "Loss")
-    val optimizer = tf.train.GradientDescent(learningRate = 0.001)          // the optimizer updates our weights
+    val optimizer = tf.train.Adam(learningRate = 0.001)          // the optimizer updates our weights
 
     val model = tf.learn.Model.supervised(input, layer, labelInput, trainInputLayer, loss, optimizer)
 
@@ -84,10 +83,10 @@ object FashionMnistMLP {
         tf.learn.LossLogger(trigger = tf.learn.StepHookTrigger(100)),
         tf.learn.Evaluator(
           log = true, datasets = Seq(("Train", () => evalTrainData), ("Test", () => evalTestData)),
-          metrics = Seq(accMetric), trigger = tf.learn.StepHookTrigger(1000), name = "Evaluator", summaryDir = summariesDir),
+          metrics = Seq(accMetric), trigger = tf.learn.StepHookTrigger(500), name = "Evaluator", summaryDir = summariesDir),
         tf.learn.StepRateLogger(log = false, summaryDir = summariesDir, trigger = tf.learn.StepHookTrigger(100)),
         tf.learn.SummarySaver(summariesDir, tf.learn.StepHookTrigger(100)),
-        tf.learn.CheckpointSaver(summariesDir, tf.learn.StepHookTrigger(1000))),
+        tf.learn.CheckpointSaver(summariesDir, tf.learn.StepHookTrigger(500))),
       tensorBoardConfig = tf.learn.TensorBoardConfig(summariesDir, reloadInterval = 1))
 
     // train the model
