@@ -51,40 +51,18 @@ object SimpleCNN {
 
     val seed = 42
     val batchSize    = 64
-    val numEpochs    = 30
 
     val dataDir = File(args(0))
     val mode = args(1) // train or infer
 
     // define the neural network architecture
-    val input = tf.learn.Input(UINT8, Shape(-1, 200, 200, 3)) // type and shape of images
+    val input = tf.learn.Input(UINT8, Shape(-1, 250, 250, 3)) // type and shape of images
     val trainInput = tf.learn.Input(UINT8, Shape(-1)) // type and shape of labels
 
-    val layers =
-      tf.learn.Cast("Input/Cast", FLOAT32) >>
-      tf.learn.Conv2D("Layer_0/Conv2D", Shape(3, 3, 3, 32), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
-      tf.learn.AddBias("Layer_0/Bias") >>
-      tf.learn.ReLU("Layer_0/ReLU", alpha = 0.1f) >>
-      tf.learn.MaxPool("Layer_0/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, padding = ValidConvPadding) >>
-      tf.learn.Conv2D("Layer_1/Conv2D", Shape(3, 3, 32, 64), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
-      tf.learn.AddBias("Layer_1/Bias") >>
-      tf.learn.ReLU("Layer_1/ReLU", alpha = 0.1f) >>
-      tf.learn.MaxPool("Layer_1/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, padding = ValidConvPadding) >>
-      tf.learn.Dropout("Layer_3/Dropout", keepProbability = 0.8f) >>
-      tf.learn.Conv2D("Layer_2/Conv2D", Shape(3, 3, 64, 128), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
-      tf.learn.AddBias("Layer_2/Bias") >>
-      tf.learn.ReLU("Layer_2/ReLU", alpha = 0.1f) >>
-      tf.learn.MaxPool("Layer_2/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, padding = ValidConvPadding) >>
-      tf.learn.Dropout("Layer_3/Dropout", keepProbability = 0.8f) >>
-      tf.learn.Conv2D("Layer_3/Conv2D", Shape(3, 3, 128, 128), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
-      tf.learn.AddBias("Layer_3/Bias") >>
-      tf.learn.ReLU("Layer_3/ReLU", alpha = 0.1f) >>
-      tf.learn.MaxPool("Layer_3/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, padding = ValidConvPadding) >>
-      tf.learn.Dropout("Layer_3/Dropout", keepProbability = 0.5f) >>
-      tf.learn.Flatten("Layer_3/Flatten") >>
-      tf.learn.Linear("Layer_4/Linear", units = 512) >>
-      tf.learn.ReLU("Layer_4/ReLU") >>
-      tf.learn.Linear("OutputLayer/Linear", 2)
+    val modelIndex = args(2).toInt
+    val layers = SimpleCNNModels.models(modelIndex)
+
+    val labelMap = Seq("not_scala", "scala")
 
     val trainInputLayer = tf.learn.Cast("TrainInput/Cast", INT64) // cast labels to long
 
@@ -94,7 +72,7 @@ object SimpleCNN {
 
     val model = tf.learn.Model.supervised(input, layers, trainInput, trainInputLayer, loss, optimizer)
 
-    val summariesDir = Paths.get("temp/simple-cnn")
+    val summariesDir = Paths.get(s"temp/logo-classifier-v$modelIndex")
     val accMetric = tf.metrics.MapMetric(
       (v: (Output, Output)) => (v._1.argmax(-1), v._2), tf.metrics.Accuracy())
 
@@ -126,7 +104,7 @@ object SimpleCNN {
       def readImage(filename: Output): Output = {
         val rawImage = tf.data.readFile(filename)
         val image = tf.image.decodeJpeg(rawImage, numChannels = 3)
-        tf.image.resizeBilinear(image.expandDims(axis = 0), Seq(200, 200)).squeeze(Seq(0)).cast(UINT8)
+        tf.image.resizeBilinear(image.expandDims(axis = 0), Seq(250, 250)).squeeze(Seq(0)).cast(UINT8)
       }
 
       val trainData: Dataset[(Tensor, Tensor), (Output, Output), (DataType, DataType), (Shape, Shape)] =
@@ -158,7 +136,7 @@ object SimpleCNN {
       val estimator = tf.learn.InMemoryEstimator(
         model,
         tf.learn.Configuration(Some(summariesDir)),
-        tf.learn.StopCriteria(maxSteps = Some((25000/batchSize)*numEpochs)), // due to a bug, we can't use epochs directly,
+        tf.learn.StopCriteria(maxSteps = Some(10000)),
         Set(
           tf.learn.LossLogger(trigger = tf.learn.StepHookTrigger(100)),
           tf.learn.Evaluator(
@@ -177,8 +155,8 @@ object SimpleCNN {
 
       val estimator = tf.learn.InMemoryEstimator(model, tf.learn.Configuration(Some(summariesDir)))
 
-      val inputType = args(2)
-      val input = args(3)
+      val inputType = args(3)
+      val input = args(4)
       inputType match {
         case "image" =>
           val image = imread(input)
@@ -220,18 +198,20 @@ object SimpleCNN {
         canvasFrame.setCanvasSize(image.size.width, image.size.height)
 
         val resizedImage = new Mat()
-        resize(image, resizedImage, new Size(200, 200))
+        resize(image, resizedImage, new Size(250, 250))
         val imageTensor = matToTensor(resizedImage)
 
         val result: Tensor = estimator.infer(() => imageTensor)
 
         logger.info("Result {}", result.summarize(flattened = true))
-        val probabilities = result.softmax()
-        logger.info("Probabilities {}", result.summarize(flattened = true))
-        val label = result.argmax(1)
+        val probabilities = result.softmax().entriesIterator.map(_.asInstanceOf[Float]).toVector
+        logger.info("Probabilities {}", probabilities.summarize(flattened = true))
+        val label = result.argmax(1).scalar.asInstanceOf[Long].toInt
         logger.info("Label {}", label.summarize(flattened = true))
 
-        drawLabel(image, probabilities.entriesIterator.toVector.map(_.toString) + " " + label.scalar.toString)
+        drawLabel(image,
+          s"Class: $label (${labelMap(label)}) " +
+          s"Probability(${probabilities(label)})")
 
         canvasFrame.showImage(new OpenCVFrameConverter.ToMat().convert(image))
         canvasFrame.waitKey(0)
@@ -240,7 +220,7 @@ object SimpleCNN {
 
       // run detector on an image sequence
       def detectSequence(grabber: FrameGrabber): Unit = {
-        val canvasFrame = new CanvasFrame("Object Detection", CanvasFrame.getDefaultGamma / grabber.getGamma)
+        val canvasFrame = new CanvasFrame("Logo Classifier", CanvasFrame.getDefaultGamma / grabber.getGamma)
         canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) // exit when the canvas frame is closed
         val converter = new OpenCVFrameConverter.ToMat()
         grabber.start()
@@ -250,18 +230,20 @@ object SimpleCNN {
           if (image != null) { // sometimes the first few frames are empty so we ignore them
 
             val resizedImage = new Mat()
-            resize(image, resizedImage, new Size(200, 200))
+            resize(image, resizedImage, new Size(250, 250))
             val imageTensor = matToTensor(resizedImage)
 
             val result: Tensor = estimator.infer(() => imageTensor)
 
             logger.info("Result {}", result.summarize(flattened = true))
-            val probabilities = result.softmax()
-            logger.info("Probabilities {}", result.summarize(flattened = true))
-            val label = result.argmax(1)
+            val probabilities = result.softmax().entriesIterator.map(_.asInstanceOf[Float]).toVector
+            logger.info("Probabilities {}", probabilities.summarize(flattened = true))
+            val label = result.argmax(1).scalar.asInstanceOf[Long].toInt
             logger.info("Label {}", label.summarize(flattened = true))
 
-            drawLabel(image, probabilities.entriesIterator.toVector.map(_.toString) + " " + label.scalar.toString)
+            drawLabel(image,
+              s"Class: $label (${labelMap(label)}) " +
+                s"Probability: ${probabilities(label)}")
 
             if (canvasFrame.isVisible) { // show our frame in the preview
               canvasFrame.showImage(frame)
