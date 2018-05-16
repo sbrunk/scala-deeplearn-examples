@@ -42,7 +42,7 @@ import scala.collection.Iterator.continually
   */
 object SimpleCNNModels {
 
-  lazy val models = Seq(v0, v1, v2, v3, v4, v5, v6)
+  lazy val models = Seq(v0, v1, v2, v3, v4, v5, v6, v7)
 
   val v0 =
     tf.learn.Cast("Input/Cast", FLOAT32) >>
@@ -135,6 +135,17 @@ object SimpleCNNModels {
       tf.learn.Linear("Layer_5/Linear", units = 512) >>
       tf.learn.ReLU("Layer_5/ReLU", 0.01f) >>
       tf.learn.Dropout("Layer_5/Dropout", keepProbability = 0.8f) >>
+      tf.learn.Linear("OutputLayer/Linear", 2)
+
+  val v7 =
+    tf.learn.Cast("Input/Cast", FLOAT32) >>
+      tf.learn.Conv2D("Layer_1/Conv2D", Shape(3, 3, 3, 32), stride1 = 1, stride2 = 1, padding = ValidConvPadding) >>
+      tf.learn.AddBias("Layer_1/Bias") >>
+      tf.learn.ReLU("Layer_1/ReLU", alpha = 0.1f) >>
+      tf.learn.MaxPool("Layer_1/MaxPool", windowSize = Seq(1, 2, 2, 1), stride1 = 2, stride2 = 2, padding = ValidConvPadding) >>
+      tf.learn.Flatten("Layer_2/Flatten") >>
+      tf.learn.Linear("Layer_2/Linear", units = 512) >>
+      tf.learn.ReLU("Layer_2/ReLU", 0.01f) >>
       tf.learn.Linear("OutputLayer/Linear", 2)
 
 }

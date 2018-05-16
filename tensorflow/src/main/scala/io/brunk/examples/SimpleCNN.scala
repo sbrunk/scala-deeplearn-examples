@@ -197,16 +197,16 @@ object SimpleCNN {
         canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) // exit when the canvas frame is closed
         canvasFrame.setCanvasSize(image.size.width, image.size.height)
 
-        val resizedImage = new Mat()
-        resize(image, resizedImage, new Size(250, 250))
-        val imageTensor = matToTensor(resizedImage)
+        val imageTensor = matToTensor(image)
+        val s = Session()
+        val resized = s.run(fetches = tf.image.resizeBilinear(imageTensor, Seq(250, 250)).cast(UINT8))
 
-        val result: Tensor = estimator.infer(() => imageTensor)
+        val result: Tensor = estimator.infer(() => resized)
 
         logger.info("Result {}", result.summarize(flattened = true))
         val probabilities = result.softmax().entriesIterator.map(_.asInstanceOf[Float]).toVector
-        logger.info("Probabilities {}", probabilities.summarize(flattened = true))
-        val label = result.argmax(1).scalar.asInstanceOf[Long].toInt
+        logger.info("Probabilities {}", probabilities)
+        val label = result.argmax(-1).scalar.asInstanceOf[Long].toInt
         logger.info("Label {}", label.summarize(flattened = true))
 
         drawLabel(image,
@@ -229,16 +229,16 @@ object SimpleCNN {
           val image = converter.convert(frame)
           if (image != null) { // sometimes the first few frames are empty so we ignore them
 
-            val resizedImage = new Mat()
-            resize(image, resizedImage, new Size(250, 250))
-            val imageTensor = matToTensor(resizedImage)
+            val imageTensor = matToTensor(image)
+            val s = Session()
+            val resized = s.run(fetches = tf.image.resizeBilinear(imageTensor, Seq(250, 250)).cast(UINT8))
 
-            val result: Tensor = estimator.infer(() => imageTensor)
+            val result: Tensor = estimator.infer(() => resized)
 
             logger.info("Result {}", result.summarize(flattened = true))
             val probabilities = result.softmax().entriesIterator.map(_.asInstanceOf[Float]).toVector
-            logger.info("Probabilities {}", probabilities.summarize(flattened = true))
-            val label = result.argmax(1).scalar.asInstanceOf[Long].toInt
+            logger.info("Probabilities {}", probabilities)
+            val label = result.argmax(-1).scalar.asInstanceOf[Long].toInt
             logger.info("Label {}", label.summarize(flattened = true))
 
             drawLabel(image,
