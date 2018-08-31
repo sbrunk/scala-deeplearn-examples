@@ -58,7 +58,7 @@ lazy val library =
       val logbackClassic = "1.2.3"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
-      val tensorFlow = "0.2.0-SNAPSHOT"
+      val tensorFlow = "0.2.4"
 
     }
     val betterFiles = "com.github.pathikrit" %% "better-files" % Version.betterFiles
@@ -82,7 +82,7 @@ lazy val library =
 
 lazy val settings =
   Seq(
-    scalaVersion := "2.12.4",
+    scalaVersion := "2.12.6",
     organization := "io.brunk",
     organizationName := "Sören Brunk",
     startYear := Some(2017),
